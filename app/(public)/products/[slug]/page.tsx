@@ -4,10 +4,12 @@ import Link from "next/link";
 import { ProductPurchaseControls } from "@/components/cart/product-purchase-controls";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
-import { getServerSession } from "@/lib/auth";
+import { getOptionalServerSession } from "@/lib/auth";
 import { estimateProductWeightKg } from "@/lib/checkout-config";
 import { formatPrice } from "@/lib/currency";
 import { getRequiredProductBySlug } from "@/lib/products";
+
+export const dynamic = "force-dynamic";
 
 function buildCategoryHref(categoryName: string | null) {
   if (!categoryName) {
@@ -48,7 +50,7 @@ export default async function ProductDetailPage({
 }: {
   params: { slug: string };
 }) {
-  const [product, session] = await Promise.all([getRequiredProductBySlug(params.slug), getServerSession()]);
+  const [product, session] = await Promise.all([getRequiredProductBySlug(params.slug), getOptionalServerSession()]);
   const canViewProductImage = Boolean(session?.user);
   const mainImage = product.images[0]?.imageUrl ?? "/images/hero/hero-main.jpg";
   const categoryHref = buildCategoryHref(product.categoryName);

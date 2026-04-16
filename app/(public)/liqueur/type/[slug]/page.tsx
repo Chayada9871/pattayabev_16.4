@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { CategoryPage } from "@/components/site/category-page";
 import { getProductsByCategoryOrType } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 const liqueurTypePages = [
   {
     slug: "gin",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth";
 import {
   createOrder,
   type BillingAddressInput,
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     });
 
     const body = (await request.json()) as RequestBody;
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getRequestSession(request);
 
     if (!body.cartItems?.length) {
       return NextResponse.json({ error: "Cart is empty." }, { status: 400 });

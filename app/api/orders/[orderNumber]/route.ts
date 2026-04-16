@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth";
 import { getCheckoutSchemaMessage, getOrderByOrderNumber } from "@/lib/orders";
 import { canAccessOrderRecord, getOrderAccessRecord, sanitizeOrderAccessToken } from "@/lib/order-security";
 import { enforceRateLimit, getPublicErrorDetails, logSecurityEvent } from "@/lib/security";
@@ -22,7 +22,7 @@ export async function GET(
 
     const url = new URL(request.url);
     const accessToken = sanitizeOrderAccessToken(url.searchParams.get("access"));
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getRequestSession(request);
     const accessRecord = await getOrderAccessRecord(params.orderNumber);
 
     if (

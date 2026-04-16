@@ -16,9 +16,8 @@ declare global {
   var __pattayabevMailer: ReturnType<typeof nodemailer.createTransport> | undefined;
 }
 
-const transporter =
-  global.__pattayabevMailer ??
-  nodemailer.createTransport({
+function createTransporter() {
+  return nodemailer.createTransport({
     host: getRequiredEnv("SMTP_HOST"),
     port: Number(getRequiredEnv("SMTP_PORT")),
     secure: Number(getRequiredEnv("SMTP_PORT")) === 465,
@@ -27,9 +26,16 @@ const transporter =
       pass: getRequiredEnv("SMTP_PASS")
     }
   });
+}
 
-if (process.env.NODE_ENV !== "production") {
-  global.__pattayabevMailer = transporter;
+function getTransporter() {
+  const transporter = global.__pattayabevMailer ?? createTransporter();
+
+  if (process.env.NODE_ENV !== "production") {
+    global.__pattayabevMailer = transporter;
+  }
+
+  return transporter;
 }
 
 export async function sendVerificationEmailMessage({
@@ -50,7 +56,7 @@ export async function sendVerificationEmailMessage({
   });
 
   try {
-    const info = await transporter.sendMail({
+    const info = await getTransporter().sendMail({
       from: `"${fromName}" <${fromAddress}>`,
       to,
       subject: "Confirm your email",
@@ -112,7 +118,7 @@ export async function sendResetPasswordEmailMessage({
   });
 
   try {
-    const info = await transporter.sendMail({
+    const info = await getTransporter().sendMail({
       from: `"${fromName}" <${fromAddress}>`,
       to,
       subject: "Reset your password",

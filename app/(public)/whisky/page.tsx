@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site/header";
 import { ProductCard } from "@/components/site/product-card";
 import { getWhiskyProducts } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 const whiskyStyleCards = [
   {
     name: "ซิงเกิลมอลต์ วิสกี้",

@@ -3,7 +3,9 @@ import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/lib/auth";
 import { enforceRateLimit, logSecurityEvent } from "@/lib/security";
 
-const handler = toNextJsHandler(auth);
+function getHandler() {
+  return toNextJsHandler(auth);
+}
 
 function getAuthRateLimitConfig(pathname: string) {
   if (pathname.endsWith("/sign-in/email")) {
@@ -54,10 +56,21 @@ function getAuthRateLimitConfig(pathname: string) {
   return null;
 }
 
-export const GET = handler.GET;
-export const PUT = handler.PUT;
-export const PATCH = handler.PATCH;
-export const DELETE = handler.DELETE;
+export async function GET(request: Request) {
+  return getHandler().GET(request);
+}
+
+export async function PUT(request: Request) {
+  return getHandler().PUT(request);
+}
+
+export async function PATCH(request: Request) {
+  return getHandler().PATCH(request);
+}
+
+export async function DELETE(request: Request) {
+  return getHandler().DELETE(request);
+}
 
 export async function POST(request: Request) {
   const pathname = new URL(request.url).pathname;
@@ -84,5 +97,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return handler.POST(request);
+  return getHandler().POST(request);
 }

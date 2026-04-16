@@ -1,6 +1,8 @@
 import { CategoryPage } from "@/components/site/category-page";
 import { getProductsByCategory } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 export default async function BarToolsPage() {
   const products = await getProductsByCategory(["อุปกรณ์บาร์", "bar tools"], ["bar-tools"], 24);
 

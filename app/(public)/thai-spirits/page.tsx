@@ -1,6 +1,8 @@
 import { CategoryPage } from "@/components/site/category-page";
 import { getProductsByCategory } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 export default async function ThaiSpiritsPage() {
   const products = await getProductsByCategory(["สุราไทย", "thai spirits"], ["thai-spirits"], 24);
 

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ProductCardCartControl } from "@/components/cart/product-card-cart-control";
-import { getServerSession } from "@/lib/auth";
+import { getOptionalServerSession } from "@/lib/auth";
 import { estimateProductWeightKg } from "@/lib/checkout-config";
 import { formatPrice } from "@/lib/currency";
 import type { ProductCard as ProductCardData } from "@/lib/products";
@@ -15,7 +15,7 @@ type ProductCardProps = {
 const loginToViewImageLabel = "เข้าสู่ระบบเพื่อดูรูปสินค้า";
 
 export async function ProductCard({ product, fallbackLabel = "สินค้า" }: ProductCardProps) {
-  const session = await getServerSession();
+  const session = await getOptionalServerSession();
   const canViewProductImage = Boolean(session?.user);
   const sellingPrice = product.discountedPrice ?? product.price;
   const metaText =

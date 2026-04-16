@@ -7,6 +7,8 @@ import { SiteHeader } from "@/components/site/header";
 import { ProductCard } from "@/components/site/product-card";
 import { getWhiskyProductsBySubcategory, whiskySubcategoryPages } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 const blankProducts = Array.from({ length: 8 }, (_, index) => index + 1);
 const whiskySubcategoryImages: Record<string, string> = {
   "single-malt-whisky": "/images/categories/single-malt-whisky.png",

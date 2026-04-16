@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site/header";
 import { ProductCard } from "@/components/site/product-card";
 import { getProductsByRecommendedCategory, recommendedCategoryPages } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 const recommendedImages: Record<string, string> = {
   "best-sellers": "/images/categories/recommend.jpg",
   "new-arrivals": "/images/hero/hero-main.jpg",

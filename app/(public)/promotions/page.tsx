@@ -3,8 +3,10 @@ import Link from "next/link";
 
 import { SiteFooter } from "@/components/site/footer";
 import { SiteHeader } from "@/components/site/header";
-import { getServerSession } from "@/lib/auth";
+import { getOptionalServerSession } from "@/lib/auth";
 import { formatPromotionBenefit, getActivePromotions, getDiscountedPrice } from "@/lib/promotions";
+
+export const dynamic = "force-dynamic";
 
 function formatPrice(price: number, currency: string) {
   return new Intl.NumberFormat("th-TH", {
@@ -15,7 +17,7 @@ function formatPrice(price: number, currency: string) {
 }
 
 export default async function PromotionsPage() {
-  const [promotions, session] = await Promise.all([getActivePromotions(), getServerSession()]);
+  const [promotions, session] = await Promise.all([getActivePromotions(), getOptionalServerSession()]);
   const canViewProductImage = Boolean(session?.user);
   const productPromotions = promotions.filter(
     (promotion) => promotion.linkedProductId && promotion.linkedProductSlug && promotion.linkedProductPrice != null

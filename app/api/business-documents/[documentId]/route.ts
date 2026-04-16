@@ -7,8 +7,8 @@ import {
   getBusinessDocumentMimeType,
   resolveBusinessDocumentAbsolutePath
 } from "@/lib/business-documents";
+import { getRequestSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
 import { enforceRateLimit, isUuid, logSecurityEvent } from "@/lib/security";
 
 export const runtime = "nodejs";
@@ -30,7 +30,7 @@ export async function GET(
       return NextResponse.json({ error: "Document not found." }, { status: 404 });
     }
 
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getRequestSession(request);
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });

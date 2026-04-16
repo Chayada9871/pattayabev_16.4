@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site/header";
 import { ProductCard } from "@/components/site/product-card";
 import { getProductsByCategory } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 const otherProductCards = [
   { name: "น้ำแร่", href: "/other-products/mineral-water", image: "/images/categories/mineral.jpg" },
   { name: "ไซรัป (น้ำเชื่อม)", href: "/other-products/syrup", image: "/images/categories/syrup.webp" },

@@ -17,15 +17,30 @@ function getRequiredEnv(name: string) {
   return value;
 }
 
-export const db =
-  global.__pattayabevPool ??
-  new Pool({
+function createPool() {
+  return new Pool({
     connectionString: getRequiredEnv("DATABASE_URL"),
     ssl: {
       rejectUnauthorized: false
     }
   });
-
-if (process.env.NODE_ENV !== "production") {
-  global.__pattayabevPool = db;
 }
+
+function getPool() {
+  const pool = global.__pattayabevPool ?? createPool();
+
+  if (process.env.NODE_ENV !== "production") {
+    global.__pattayabevPool = pool;
+  }
+
+  return pool;
+}
+
+export const db = new Proxy({} as Pool, {
+  get(_target, property, receiver) {
+    const pool = getPool();
+    const value = Reflect.get(pool, property, receiver);
+
+    return typeof value === "function" ? value.bind(pool) : value;
+  }
+});

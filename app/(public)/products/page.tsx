@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site/header";
 import { ProductCard } from "@/components/site/product-card";
 import { getLatestProducts, searchProductsByName } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
 const productCategoryCards = [
   { name: "วิสกี้", href: "/whisky", image: "/images/categories/whisky.jpg" },
   { name: "ลิเคียวร์", href: "/liqueur", image: "/images/categories/liquor.png" },

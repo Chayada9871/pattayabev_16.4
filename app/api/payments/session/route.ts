@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth";
 import { getCheckoutSchemaMessage } from "@/lib/orders";
 import { canAccessOrderRecord, getOrderAccessRecord, sanitizeOrderAccessToken } from "@/lib/order-security";
 import { createPaymentSessionForOrder } from "@/lib/payment-service";
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     const accessToken = sanitizeOrderAccessToken(body.accessToken);
-    const session = await auth.api.getSession({ headers: request.headers });
+    const session = await getRequestSession(request);
     const accessRecord = await getOrderAccessRecord(orderNumber);
 
     if (

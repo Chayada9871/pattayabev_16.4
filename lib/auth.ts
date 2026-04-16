@@ -23,10 +23,10 @@ function getRequiredEnv(name: string) {
 }
 
 const verificationExpiresInSeconds = 3600;
-const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
-const appURL = process.env.NEXT_PUBLIC_APP_URL || baseURL;
 
 function buildVerificationPageUrl(token: string, email: string) {
+  const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+  const appURL = process.env.NEXT_PUBLIC_APP_URL || baseURL;
   return `${appURL}/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
 }
 
@@ -48,83 +48,148 @@ async function sendVerificationEmailForUser(user: {
   });
 }
 
-export const auth = betterAuth({
-  appName: "PattayaBev",
-  database: db,
-  baseURL,
-  trustedOrigins: [
-    "http://localhost:3000",
-    "https://pattayabev-azih1vgoi-chayada9871s-projects.vercel.app",
-    "https://*.vercel.app"
-  ],
-  secret: getRequiredEnv("BETTER_AUTH_SECRET"),
-  plugins: [nextCookies()],
-  emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    autoSignInAfterVerification: false,
-    expiresIn: verificationExpiresInSeconds,
-    async sendVerificationEmail({ user, token }) {
-      await sendVerificationEmailMessage({
-        to: user.email,
-        userName: user.name,
-        verifyUrl: buildVerificationPageUrl(token, user.email)
-      });
-    }
-  },
-  emailAndPassword: {
-    enabled: true,
-    autoSignIn: true,
-    minPasswordLength: 10,
-    requireEmailVerification: true,
-    resetPasswordTokenExpiresIn: verificationExpiresInSeconds,
-    revokeSessionsOnPasswordReset: true,
-    async sendResetPassword({ user, url }) {
-      await sendResetPasswordEmailMessage({
-        to: user.email,
-        userName: user.name,
-        resetUrl: url
-      });
-    },
-    async onExistingUserSignUp({ user }) {
-      if (!user.emailVerified) {
-        await sendVerificationEmailForUser(user);
+function createAuth() {
+  const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+
+  return betterAuth({
+    appName: "PattayaBev",
+    database: db,
+    baseURL,
+    trustedOrigins: [
+      "http://localhost:3000",
+      "https://pattayabev-azih1vgoi-chayada9871s-projects.vercel.app",
+      "https://*.vercel.app"
+    ],
+    secret: getRequiredEnv("BETTER_AUTH_SECRET"),
+    plugins: [nextCookies()],
+    emailVerification: {
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      autoSignInAfterVerification: false,
+      expiresIn: verificationExpiresInSeconds,
+      async sendVerificationEmail({ user, token }) {
+        await sendVerificationEmailMessage({
+          to: user.email,
+          userName: user.name,
+          verifyUrl: buildVerificationPageUrl(token, user.email)
+        });
       }
-    }
-  },
-  user: {
-    deleteUser: {
+    },
+    emailAndPassword: {
       enabled: true,
-      async beforeDelete(user) {
-        await deleteBusinessDocumentsForUser(user.id);
+      autoSignIn: true,
+      minPasswordLength: 10,
+      requireEmailVerification: true,
+      resetPasswordTokenExpiresIn: verificationExpiresInSeconds,
+      revokeSessionsOnPasswordReset: true,
+      async sendResetPassword({ user, url }) {
+        await sendResetPasswordEmailMessage({
+          to: user.email,
+          userName: user.name,
+          resetUrl: url
+        });
+      },
+      async onExistingUserSignUp({ user }) {
+        if (!user.emailVerified) {
+          await sendVerificationEmailForUser(user);
+        }
       }
     },
-    additionalFields: {
-      role: {
-        type: ["admin", "manager", "user"],
-        required: false,
-        defaultValue: "user",
-        input: false
+    user: {
+      deleteUser: {
+        enabled: true,
+        async beforeDelete(user) {
+          await deleteBusinessDocumentsForUser(user.id);
+        }
+      },
+      additionalFields: {
+        role: {
+          type: ["admin", "manager", "user"],
+          required: false,
+          defaultValue: "user",
+          input: false
+        }
       }
     }
+  });
+}
+
+type AuthInstance = ReturnType<typeof createAuth>;
+
+declare global {
+  var __pattayabevAuth: AuthInstance | undefined;
+}
+
+function getAuth() {
+  const authInstance = global.__pattayabevAuth ?? createAuth();
+
+  if (process.env.NODE_ENV !== "production") {
+    global.__pattayabevAuth = authInstance;
+  }
+
+  return authInstance;
+}
+
+function isMissingRequiredEnvError(error: unknown) {
+  return error instanceof Error && error.message.startsWith("Missing required environment variable:");
+}
+
+function hasBetterAuthSessionCookie(cookieHeader: string | null | undefined) {
+  if (!cookieHeader) {
+    return false;
+  }
+
+  return /(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/.test(cookieHeader);
+}
+
+export const auth = new Proxy({} as AuthInstance, {
+  get(_target, property, receiver) {
+    const authInstance = getAuth();
+    const value = Reflect.get(authInstance, property, receiver);
+
+    return typeof value === "function" ? value.bind(authInstance) : value;
   }
 });
 
-export type AuthSession = typeof auth.$Infer.Session;
+type BaseAuthSession = AuthInstance["$Infer"]["Session"];
+
+export type AuthSession = Omit<BaseAuthSession, "user"> & {
+  user: BaseAuthSession["user"] & {
+    role?: AppRole | null;
+  };
+};
 export type AuthUser = AuthSession["user"];
 
 function getRoleFromSession(session: AuthSession | null | undefined): AppRole {
   return (session?.user.role as AppRole | undefined) ?? "user";
 }
 
-const getCachedServerSession = cache(async () => {
-  return auth.api.getSession({
-    headers: await headers()
-  });
+const getCachedServerSession = cache(async (): Promise<AuthSession | null> => {
+  const requestHeaders = await headers();
+
+  if (!hasBetterAuthSessionCookie(requestHeaders.get("cookie"))) {
+    return null;
+  }
+
+  return (await auth.api.getSession({
+    headers: requestHeaders
+  })) as AuthSession | null;
 });
 
-export async function getServerSession() {
+export async function getServerSession(): Promise<AuthSession | null> {
   return getCachedServerSession();
+}
+
+export async function getOptionalServerSession(): Promise<AuthSession | null> {
+  try {
+    return await getServerSession();
+  } catch (error) {
+    if (isMissingRequiredEnvError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 export async function getCurrentUser() {
@@ -132,10 +197,14 @@ export async function getCurrentUser() {
   return session?.user ?? null;
 }
 
-export async function getRequestSession(request: Request) {
-  return auth.api.getSession({
+export async function getRequestSession(request: Request): Promise<AuthSession | null> {
+  if (!hasBetterAuthSessionCookie(request.headers.get("cookie"))) {
+    return null;
+  }
+
+  return (await auth.api.getSession({
     headers: request.headers
-  });
+  })) as AuthSession | null;
 }
 
 export function isAdminSession(session: AuthSession | null | undefined) {
