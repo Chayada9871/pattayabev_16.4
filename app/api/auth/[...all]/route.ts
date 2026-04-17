@@ -3,8 +3,81 @@ import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/lib/auth";
 import { enforceRateLimit, logSecurityEvent } from "@/lib/security";
 
+export const runtime = "nodejs";
+
 function getHandler() {
   return toNextJsHandler(auth);
+}
+
+function getPublicAuthError(error: unknown) {
+  const reason = error instanceof Error ? error.message : "unknown";
+  const raw = reason.toLowerCase();
+
+  if (raw.startsWith("missing required environment variable: smtp_") || raw.includes("smtp")) {
+    return {
+      status: 503,
+      code: "email_service_unavailable",
+      message: "Email verification is temporarily unavailable. Please contact support."
+    };
+  }
+
+  if (raw.startsWith("missing required environment variable:")) {
+    return {
+      status: 503,
+      code: "auth_service_unavailable",
+      message: "Authentication service is temporarily unavailable. Please try again shortly."
+    };
+  }
+
+  if (raw.includes("invalid base url")) {
+    return {
+      status: 503,
+      code: "auth_base_url_invalid",
+      message: "Authentication service is temporarily unavailable. Please try again shortly."
+    };
+  }
+
+  if (raw.includes("failed to initialize database adapter") || raw.includes("database adapter")) {
+    return {
+      status: 503,
+      code: "auth_database_unavailable",
+      message: "Authentication service is temporarily unavailable. Please try again shortly."
+    };
+  }
+
+  return {
+    status: 500,
+    code: "auth_unexpected_error",
+    message: "Authentication service is temporarily unavailable. Please try again shortly."
+  };
+}
+
+async function runAuthHandler(
+  method: "GET" | "PUT" | "PATCH" | "DELETE" | "POST",
+  request: Request
+) {
+  try {
+    return await getHandler()[method](request);
+  } catch (error) {
+    const authError = getPublicAuthError(error);
+
+    logSecurityEvent("auth.handler.error", {
+      path: new URL(request.url).pathname,
+      method,
+      reason: error instanceof Error ? error.message : "unknown",
+      status: authError.status
+    });
+
+    return Response.json(
+      {
+        code: authError.code,
+        message: authError.message
+      },
+      {
+        status: authError.status
+      }
+    );
+  }
 }
 
 function getAuthRateLimitConfig(pathname: string) {
@@ -57,19 +130,19 @@ function getAuthRateLimitConfig(pathname: string) {
 }
 
 export async function GET(request: Request) {
-  return getHandler().GET(request);
+  return runAuthHandler("GET", request);
 }
 
 export async function PUT(request: Request) {
-  return getHandler().PUT(request);
+  return runAuthHandler("PUT", request);
 }
 
 export async function PATCH(request: Request) {
-  return getHandler().PATCH(request);
+  return runAuthHandler("PATCH", request);
 }
 
 export async function DELETE(request: Request) {
-  return getHandler().DELETE(request);
+  return runAuthHandler("DELETE", request);
 }
 
 export async function POST(request: Request) {
@@ -97,5 +170,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return getHandler().POST(request);
+  return runAuthHandler("POST", request);
 }

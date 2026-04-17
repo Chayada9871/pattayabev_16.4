@@ -68,7 +68,9 @@ function createAuth() {
     plugins: [nextCookies()],
     emailVerification: {
       sendOnSignUp: true,
-      sendOnSignIn: true,
+      // Keep login independent from mail transport so unverified users
+      // get a clear auth error instead of a server failure when SMTP is down.
+      sendOnSignIn: false,
       autoSignInAfterVerification: false,
       expiresIn: verificationExpiresInSeconds,
       async sendVerificationEmail({ user, token }) {
