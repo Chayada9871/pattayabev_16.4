@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { getAppUrl } from "@/lib/app-url";
 import { deleteBusinessDocumentsForUser } from "@/lib/business-documents";
 import { db } from "@/lib/db";
 import { getDashboardRoute, type AppRole } from "@/lib/auth-utils";
@@ -25,8 +26,7 @@ function getRequiredEnv(name: string) {
 const verificationExpiresInSeconds = 3600;
 
 function buildVerificationPageUrl(token: string, email: string) {
-  const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
-  const appURL = process.env.NEXT_PUBLIC_APP_URL || baseURL;
+  const appURL = getAppUrl(process.env.NEXT_PUBLIC_APP_URL, process.env.BETTER_AUTH_URL, process.env.VERCEL_URL);
   return `${appURL}/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
 }
 
@@ -49,17 +49,21 @@ async function sendVerificationEmailForUser(user: {
 }
 
 function createAuth() {
-  const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+  const baseURL = getAppUrl(process.env.BETTER_AUTH_URL, process.env.NEXT_PUBLIC_APP_URL, process.env.VERCEL_URL);
+  const trustedOrigins = Array.from(
+    new Set([
+      "http://localhost:3000",
+      baseURL,
+      "https://pattayabev-azih1vgoi-chayada9871s-projects.vercel.app",
+      "https://*.vercel.app"
+    ])
+  );
 
   return betterAuth({
     appName: "PattayaBev",
     database: db,
     baseURL,
-    trustedOrigins: [
-      "http://localhost:3000",
-      "https://pattayabev-azih1vgoi-chayada9871s-projects.vercel.app",
-      "https://*.vercel.app"
-    ],
+    trustedOrigins,
     secret: getRequiredEnv("BETTER_AUTH_SECRET"),
     plugins: [nextCookies()],
     emailVerification: {

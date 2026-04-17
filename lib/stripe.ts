@@ -2,6 +2,7 @@ import "server-only";
 
 import Stripe from "stripe";
 
+import { getAppUrl as getNormalizedAppUrl } from "@/lib/app-url";
 import { buildPaymentFailedPath, buildPaymentSuccessPath } from "@/lib/order-links";
 import type { CheckoutOrder } from "@/lib/orders";
 
@@ -18,11 +19,7 @@ function getRequiredEnv(name: string) {
 }
 
 function getAppUrl() {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.BETTER_AUTH_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+  return getNormalizedAppUrl(process.env.NEXT_PUBLIC_APP_URL, process.env.BETTER_AUTH_URL, process.env.VERCEL_URL);
 }
 
 function toStripeAmount(value: number) {
