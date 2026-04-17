@@ -9,9 +9,39 @@ function getHandler() {
   return toNextJsHandler(auth);
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "unknown";
+}
+
+function getErrorCode(error: unknown) {
+  if (error && typeof error === "object" && "code" in error) {
+    return String(error.code);
+  }
+
+  return "";
+}
+
+function getErrorDetails(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return {};
+  }
+
+  return {
+    name: "name" in error ? String(error.name) : undefined,
+    code: "code" in error ? String(error.code) : undefined,
+    detail: "detail" in error ? String(error.detail) : undefined,
+    hint: "hint" in error ? String(error.hint) : undefined,
+    stack:
+      "stack" in error && typeof error.stack === "string"
+        ? error.stack.split("\n").slice(0, 6).join("\n")
+        : undefined
+  };
+}
+
 function getPublicAuthError(error: unknown) {
-  const reason = error instanceof Error ? error.message : "unknown";
+  const reason = getErrorMessage(error);
   const raw = reason.toLowerCase();
+  const errorCode = getErrorCode(error);
 
   if (raw.startsWith("missing required environment variable: smtp_") || raw.includes("smtp")) {
     return {
@@ -45,6 +75,20 @@ function getPublicAuthError(error: unknown) {
     };
   }
 
+  if (
+    errorCode === "42P01" ||
+    errorCode === "42703" ||
+    raw.includes("relation") ||
+    raw.includes("column") ||
+    raw.includes("does not exist")
+  ) {
+    return {
+      status: 503,
+      code: "auth_database_schema_invalid",
+      message: "Authentication service is temporarily unavailable. Please try again shortly."
+    };
+  }
+
   return {
     status: 500,
     code: "auth_unexpected_error",
@@ -64,8 +108,9 @@ async function runAuthHandler(
     logSecurityEvent("auth.handler.error", {
       path: new URL(request.url).pathname,
       method,
-      reason: error instanceof Error ? error.message : "unknown",
-      status: authError.status
+      reason: getErrorMessage(error),
+      status: authError.status,
+      ...getErrorDetails(error)
     });
 
     return Response.json(
