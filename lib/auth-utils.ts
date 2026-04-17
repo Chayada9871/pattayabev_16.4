@@ -35,6 +35,10 @@ export function normalizeAuthError(error: unknown) {
     return "Production login cannot connect to the database. Check the DATABASE_URL configured in Vercel.";
   }
 
+  if (code.includes("auth_credential_hash_invalid")) {
+    return "This account's stored password is not in Better Auth format. Reset the password for this user or recreate the credential account.";
+  }
+
   if (code.includes("auth_database_unavailable")) {
     return "Production login database is unavailable. Check the database adapter and DATABASE_URL in Vercel.";
   }

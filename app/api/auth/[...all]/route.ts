@@ -76,7 +76,8 @@ function getApiErrorPayload(error: unknown) {
 
 function getPublicAuthError(error: unknown) {
   const reason = getErrorMessage(error);
-  const raw = reason.toLowerCase();
+  const nestedCause = getNestedCause(error);
+  const raw = [reason, getErrorMessage(nestedCause)].join(" | ").toLowerCase();
   const errorCode = getErrorCode(error);
 
   if (raw.startsWith("missing required environment variable: smtp_") || raw.includes("smtp")) {
@@ -116,7 +117,9 @@ function getPublicAuthError(error: unknown) {
     errorCode === "42703" ||
     raw.includes("relation") ||
     raw.includes("column") ||
-    raw.includes("does not exist")
+    raw.includes("does not exist") ||
+    raw.includes("field") && raw.includes("not found in model") ||
+    raw.includes("no foreign key found")
   ) {
     return {
       status: 503,
@@ -141,6 +144,14 @@ function getPublicAuthError(error: unknown) {
       status: 503,
       code: "auth_database_connection_failed",
       message: "Authentication service is temporarily unavailable. Please try again shortly."
+    };
+  }
+
+  if (raw.includes("invalid password hash")) {
+    return {
+      status: 503,
+      code: "auth_credential_hash_invalid",
+      message: "This account needs a password reset before it can sign in."
     };
   }
 
