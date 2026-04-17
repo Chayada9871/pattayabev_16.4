@@ -27,6 +27,34 @@ export function normalizeAuthError(error: unknown) {
 
   const raw = message.toLowerCase();
 
+  if (code.includes("auth_database_schema_invalid")) {
+    return "Production login database is missing required auth tables or columns. Run the Better Auth schema on the database used by Vercel.";
+  }
+
+  if (code.includes("auth_database_connection_failed")) {
+    return "Production login cannot connect to the database. Check the DATABASE_URL configured in Vercel.";
+  }
+
+  if (code.includes("auth_database_unavailable")) {
+    return "Production login database is unavailable. Check the database adapter and DATABASE_URL in Vercel.";
+  }
+
+  if (code.includes("auth_base_url_invalid")) {
+    return "Authentication URL is invalid in production. Set BETTER_AUTH_URL and NEXT_PUBLIC_APP_URL with https://";
+  }
+
+  if (code.includes("auth_service_unavailable")) {
+    return "Authentication is missing required server environment variables in Vercel.";
+  }
+
+  if (code.includes("email_service_unavailable")) {
+    return "Email verification service is unavailable in production. Check the SMTP settings in Vercel.";
+  }
+
+  if (code.includes("auth_unexpected_error")) {
+    return "Authentication failed due to an unexpected server error. Check the Vercel Function log entry labeled auth.handler.error.";
+  }
+
   if (code.includes("user_already_exists") || raw.includes("already exists") || raw.includes("already registered")) {
     return "อีเมลนี้ถูกใช้งานแล้ว กรุณาเข้าสู่ระบบแทน";
   }

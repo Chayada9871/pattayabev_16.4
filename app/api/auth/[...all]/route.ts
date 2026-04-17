@@ -89,6 +89,25 @@ function getPublicAuthError(error: unknown) {
     };
   }
 
+  if (
+    errorCode === "28P01" ||
+    errorCode === "3D000" ||
+    errorCode === "ENOTFOUND" ||
+    errorCode === "ECONNREFUSED" ||
+    errorCode === "ETIMEDOUT" ||
+    raw.includes("password authentication failed") ||
+    raw.includes("connection terminated") ||
+    raw.includes("connect econnrefused") ||
+    raw.includes("getaddrinfo") ||
+    raw.includes("timeout expired")
+  ) {
+    return {
+      status: 503,
+      code: "auth_database_connection_failed",
+      message: "Authentication service is temporarily unavailable. Please try again shortly."
+    };
+  }
+
   return {
     status: 500,
     code: "auth_unexpected_error",
