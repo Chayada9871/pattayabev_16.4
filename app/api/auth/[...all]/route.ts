@@ -1,3 +1,4 @@
+import { isAPIError } from "better-auth/api";
 import { toNextJsHandler } from "better-auth/next-js";
 
 import { auth } from "@/lib/auth";
@@ -35,6 +36,41 @@ function getErrorDetails(error: unknown) {
       "stack" in error && typeof error.stack === "string"
         ? error.stack.split("\n").slice(0, 6).join("\n")
         : undefined
+  };
+}
+
+function getNestedCause(error: unknown): unknown {
+  if (error && typeof error === "object" && "cause" in error) {
+    return error.cause;
+  }
+
+  if (error && typeof error === "object" && "body" in error) {
+    const body = error.body;
+
+    if (body && typeof body === "object" && "cause" in body) {
+      return body.cause;
+    }
+  }
+
+  return undefined;
+}
+
+function getApiErrorPayload(error: unknown) {
+  if (!isAPIError(error)) {
+    return null;
+  }
+
+  const body =
+    error.body && typeof error.body === "object"
+      ? error.body
+      : {
+          message: error.message
+        };
+
+  return {
+    status: error.statusCode,
+    body,
+    headers: error.headers
   };
 }
 
@@ -122,6 +158,27 @@ async function runAuthHandler(
   try {
     return await getHandler()[method](request);
   } catch (error) {
+    const apiError = getApiErrorPayload(error);
+
+    if (apiError) {
+      logSecurityEvent("auth.handler.api-error", {
+        path: new URL(request.url).pathname,
+        method,
+        reason: getErrorMessage(error),
+        status: apiError.status,
+        code:
+          apiError.body && typeof apiError.body === "object" && "code" in apiError.body
+            ? String(apiError.body.code)
+            : undefined,
+        ...getErrorDetails(getNestedCause(error) ?? error)
+      });
+
+      return Response.json(apiError.body, {
+        status: apiError.status,
+        headers: apiError.headers
+      });
+    }
+
     const authError = getPublicAuthError(error);
 
     logSecurityEvent("auth.handler.error", {
@@ -129,7 +186,9 @@ async function runAuthHandler(
       method,
       reason: getErrorMessage(error),
       status: authError.status,
-      ...getErrorDetails(error)
+      ...getErrorDetails(error),
+      cause: getErrorMessage(getNestedCause(error)),
+      ...getErrorDetails(getNestedCause(error))
     });
 
     return Response.json(
