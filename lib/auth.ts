@@ -154,6 +154,29 @@ export const auth = new Proxy({} as AuthInstance, {
     const value = Reflect.get(authInstance, property, receiver);
 
     return typeof value === "function" ? value.bind(authInstance) : value;
+  },
+  has(_target, property) {
+    const authInstance = getAuth();
+    return property in authInstance;
+  },
+  getOwnPropertyDescriptor(_target, property) {
+    const authInstance = getAuth();
+    const descriptor = Object.getOwnPropertyDescriptor(authInstance, property);
+
+    if (descriptor) {
+      return descriptor;
+    }
+
+    if (property in authInstance) {
+      return {
+        configurable: true,
+        enumerable: true,
+        writable: false,
+        value: Reflect.get(authInstance, property, authInstance)
+      };
+    }
+
+    return undefined;
   }
 });
 

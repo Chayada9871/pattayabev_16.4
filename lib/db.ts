@@ -42,5 +42,28 @@ export const db = new Proxy({} as Pool, {
     const value = Reflect.get(pool, property, receiver);
 
     return typeof value === "function" ? value.bind(pool) : value;
+  },
+  has(_target, property) {
+    const pool = getPool();
+    return property in pool;
+  },
+  getOwnPropertyDescriptor(_target, property) {
+    const pool = getPool();
+    const descriptor = Object.getOwnPropertyDescriptor(pool, property);
+
+    if (descriptor) {
+      return descriptor;
+    }
+
+    if (property in pool) {
+      return {
+        configurable: true,
+        enumerable: true,
+        writable: false,
+        value: Reflect.get(pool, property, pool)
+      };
+    }
+
+    return undefined;
   }
 });

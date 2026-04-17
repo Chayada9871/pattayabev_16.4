@@ -11,7 +11,24 @@ function getHandler() {
 }
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "unknown";
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return "unknown";
 }
 
 function getErrorCode(error: unknown) {
@@ -55,6 +72,28 @@ function getNestedCause(error: unknown): unknown {
   return undefined;
 }
 
+function getErrorChain(error: unknown, limit = 6) {
+  const chain: unknown[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current && chain.length < limit && !seen.has(current)) {
+    chain.push(current);
+    seen.add(current);
+    current = getNestedCause(current);
+  }
+
+  return chain;
+}
+
+function getErrorChainDetails(error: unknown) {
+  return getErrorChain(error).map((entry, index) => ({
+    index,
+    message: getErrorMessage(entry),
+    ...getErrorDetails(entry)
+  }));
+}
+
 function getApiErrorPayload(error: unknown) {
   if (!isAPIError(error)) {
     return null;
@@ -75,10 +114,9 @@ function getApiErrorPayload(error: unknown) {
 }
 
 function getPublicAuthError(error: unknown) {
-  const reason = getErrorMessage(error);
-  const nestedCause = getNestedCause(error);
-  const raw = [reason, getErrorMessage(nestedCause)].join(" | ").toLowerCase();
-  const errorCode = getErrorCode(error);
+  const chain = getErrorChain(error);
+  const raw = chain.map((entry) => getErrorMessage(entry)).join(" | ").toLowerCase();
+  const errorCodes = chain.map((entry) => getErrorCode(entry)).filter(Boolean);
 
   if (raw.startsWith("missing required environment variable: smtp_") || raw.includes("smtp")) {
     return {
@@ -113,8 +151,8 @@ function getPublicAuthError(error: unknown) {
   }
 
   if (
-    errorCode === "42P01" ||
-    errorCode === "42703" ||
+    errorCodes.includes("42P01") ||
+    errorCodes.includes("42703") ||
     raw.includes("relation") ||
     raw.includes("column") ||
     raw.includes("does not exist") ||
@@ -129,11 +167,11 @@ function getPublicAuthError(error: unknown) {
   }
 
   if (
-    errorCode === "28P01" ||
-    errorCode === "3D000" ||
-    errorCode === "ENOTFOUND" ||
-    errorCode === "ECONNREFUSED" ||
-    errorCode === "ETIMEDOUT" ||
+    errorCodes.includes("28P01") ||
+    errorCodes.includes("3D000") ||
+    errorCodes.includes("ENOTFOUND") ||
+    errorCodes.includes("ECONNREFUSED") ||
+    errorCodes.includes("ETIMEDOUT") ||
     raw.includes("password authentication failed") ||
     raw.includes("connection terminated") ||
     raw.includes("connect econnrefused") ||
@@ -181,7 +219,8 @@ async function runAuthHandler(
           apiError.body && typeof apiError.body === "object" && "code" in apiError.body
             ? String(apiError.body.code)
             : undefined,
-        ...getErrorDetails(getNestedCause(error) ?? error)
+        ...getErrorDetails(getNestedCause(error) ?? error),
+        chain: getErrorChainDetails(error)
       });
 
       return Response.json(apiError.body, {
@@ -199,7 +238,8 @@ async function runAuthHandler(
       status: authError.status,
       ...getErrorDetails(error),
       cause: getErrorMessage(getNestedCause(error)),
-      ...getErrorDetails(getNestedCause(error))
+      ...getErrorDetails(getNestedCause(error)),
+      chain: getErrorChainDetails(error)
     });
 
     return Response.json(
