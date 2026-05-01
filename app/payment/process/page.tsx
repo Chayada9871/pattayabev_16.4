@@ -95,7 +95,7 @@ export default async function PaymentProcessPage({
                   href="/account/orders"
                   className="inline-flex h-11 items-center justify-center bg-[#171212] px-8 text-sm font-bold text-white transition hover:bg-[#2b2424]"
                 >
-                  back
+                  Back
                 </Link>
               </div>
             </div>
@@ -103,7 +103,7 @@ export default async function PaymentProcessPage({
         ) : (
           <div>
             <div className="mb-4 text-[11px] uppercase tracking-[0.12em] text-[#8b6a2b]">
-              เธซเธเนเธฒเนเธฃเธ / เธเธณเธฃเธฐเน€เธเธดเธเธเธฃเธดเธ / เธ”เธณเน€เธเธดเธเธเธฒเธฃเธเธณเธฃเธฐเน€เธเธดเธ
+              Home / Payment / Process payment
             </div>
 
             <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -111,15 +111,15 @@ export default async function PaymentProcessPage({
                 <ResponsiblePurchaseBanner />
 
                 <section className={sectionCardClassName()}>
-                  <div className={sectionTitleClassName()}>เธเธณเธฃเธฐเน€เธเธดเธเธเธฃเธดเธ</div>
+                  <div className={sectionTitleClassName()}>Process payment</div>
                   <div className={sectionBodyClassName()}>
                     <div className="border border-[#d7d1c7] bg-[#faf8f4] px-5 py-4 text-sm leading-7 text-[#5f5852]">
-                      <p className="font-semibold text-[#171212]">เธเธณเธชเธฑเนเธเธเธทเนเธญ {order.orderNumber}</p>
+                      <p className="font-semibold text-[#171212]">Order {order.orderNumber}</p>
                       <p className="mt-2">
-                        เธงเธดเธเธตเธเธณเธฃเธฐเน€เธเธดเธ: <span className="font-semibold text-[#171212]">{getPaymentMethodLabel(order.paymentMethod)}</span>
+                        Payment method: <span className="font-semibold text-[#171212]">{getPaymentMethodLabel(order.paymentMethod)}</span>
                       </p>
                       <p className="mt-2">
-                        เธชเธ–เธฒเธเธฐ: <span className="font-semibold text-[#171212]">{getPaymentStatusLabel(order.paymentStatus)}</span>
+                        Status: <span className="font-semibold text-[#171212]">{getPaymentStatusLabel(order.paymentStatus)}</span>
                       </p>
                     </div>
 
@@ -127,7 +127,7 @@ export default async function PaymentProcessPage({
                       <StartPaymentButton
                         orderNumber={order.orderNumber}
                         accessToken={accessToken}
-                        label="เธเธณเธฃเธฐเน€เธเธดเธ"
+                        label="Pay now"
                         className="inline-flex h-12 items-center justify-center bg-[#171212] px-6 text-sm font-bold text-white transition hover:bg-[#2b2424]"
                       />
 
@@ -135,14 +135,14 @@ export default async function PaymentProcessPage({
                         href={buildPaymentPath(order.orderNumber, accessToken)}
                         className="inline-flex h-12 items-center justify-center border border-[#d7d1c7] bg-white px-6 text-sm font-bold text-[#171212] transition hover:bg-[#faf7f1]"
                       >
-                        เน€เธเธฅเธตเนเธขเธเธงเธดเธเธตเธเธณเธฃเธฐเน€เธเธดเธ
+                        Change payment method
                       </Link>
 
                       <Link
                         href="/account/orders"
                         className="inline-flex h-12 items-center justify-center border border-[#d7d1c7] bg-white px-6 text-sm font-bold text-[#171212] transition hover:bg-[#faf7f1]"
                       >
-                        back
+                        Back
                       </Link>
                     </div>
                   </div>
@@ -165,10 +165,10 @@ export default async function PaymentProcessPage({
                   footer={
                     <div className="border border-[#dcd6cb] bg-white px-4 py-4 text-sm leading-7 text-[#5f5852]">
                       <p>
-                        เธเธนเนเธฃเธฑเธเธชเธดเธเธเนเธฒ: <span className="font-semibold text-[#171212]">{order.shippingAddress.fullName}</span>
+                        Recipient: <span className="font-semibold text-[#171212]">{order.shippingAddress.fullName}</span>
                       </p>
                       <p className="mt-2">
-                        เธ—เธตเนเธญเธขเธนเนเธเธฑเธ”เธชเนเธ:{" "}
+                        Shipping address:{" "}
                         <span className="font-semibold text-[#171212]">
                           {[
                             order.shippingAddress.addressLine1,

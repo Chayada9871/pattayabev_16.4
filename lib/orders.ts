@@ -190,6 +190,28 @@ function toNumber(value: unknown) {
   return 0;
 }
 
+let guestAccessTokenColumnExists: boolean | null = null;
+
+async function hasGuestAccessTokenColumn() {
+  if (guestAccessTokenColumnExists !== null) {
+    return guestAccessTokenColumnExists;
+  }
+
+  const result = await db.query(
+    `
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'orders'
+        and column_name = 'guest_access_token_hash'
+      limit 1
+    `
+  );
+
+  guestAccessTokenColumnExists = Boolean(result.rowCount);
+  return guestAccessTokenColumnExists;
+}
+
 function createOrderNumber() {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);
@@ -487,8 +509,33 @@ export async function createOrder(input: CreateOrderInput) {
     longitude: input.shippingAddress.longitude
   });
   const orderNumber = createOrderNumber();
-  const guestAccessToken = input.userId ? null : createOrderAccessToken();
+  const canStoreGuestAccessToken = await hasGuestAccessTokenColumn();
+  const guestAccessToken = !input.userId && canStoreGuestAccessToken ? createOrderAccessToken() : null;
   const guestAccessTokenHash = guestAccessToken ? hashOrderAccessToken(guestAccessToken) : null;
+  const guestAccessTokenColumnSql = canStoreGuestAccessToken ? ",\n          guest_access_token_hash" : "";
+  const guestAccessTokenValueSql = canStoreGuestAccessToken ? ", $16" : "";
+  const orderInsertValues = [
+    orderNumber,
+    input.userId,
+    normalizedGuestId || "guest-checkout",
+    sanitizeText(input.shippingAddress.fullName),
+    sanitizeText(input.shippingAddress.email),
+    normalizePhoneNumber(input.shippingAddress.phone),
+    summary.subtotal,
+    summary.shippingFee,
+    summary.discountAmount,
+    summary.totalAmount,
+    summary.currency,
+    input.deliveryMethod,
+    input.paymentMethod,
+    sanitizeText(input.notes),
+    input.ageConfirmed
+  ];
+
+  if (canStoreGuestAccessToken) {
+    orderInsertValues.push(guestAccessTokenHash);
+  }
+
   const connection = await db.connect();
 
   try {
@@ -516,36 +563,18 @@ export async function createOrder(input: CreateOrderInput) {
           payment_status,
           notes,
           age_confirmed,
-          age_confirmation_accepted,
-          guest_access_token_hash,
+          age_confirmation_accepted${guestAccessTokenColumnSql},
           gateway_provider,
           gateway_session_id,
           gateway_payment_id,
           gateway_reference
         )
         values (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11, $12, $12, $13, 'pending_payment', 'unpaid', $14, $15, $15, $16, null, null, null, null
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11, $12, $12, $13, 'pending_payment', 'unpaid', $14, $15, $15${guestAccessTokenValueSql}, null, null, null, null
         )
         returning id
       `,
-      [
-        orderNumber,
-        input.userId,
-        normalizedGuestId || "guest-checkout",
-        sanitizeText(input.shippingAddress.fullName),
-        sanitizeText(input.shippingAddress.email),
-        normalizePhoneNumber(input.shippingAddress.phone),
-        summary.subtotal,
-        summary.shippingFee,
-        summary.discountAmount,
-        summary.totalAmount,
-        summary.currency,
-        input.deliveryMethod,
-        input.paymentMethod,
-        sanitizeText(input.notes),
-        input.ageConfirmed,
-        guestAccessTokenHash
-      ]
+      orderInsertValues
     );
 
     const orderId = String(orderResult.rows[0].id);

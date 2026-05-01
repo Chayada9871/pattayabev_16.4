@@ -65,6 +65,16 @@ export default async function AdminPaymentDetailPage({
 }: {
   params: { orderNumber: string };
 }) {
+  return AdminOrderDetailPage({ params, mode: "payments" });
+}
+
+async function AdminOrderDetailPage({
+  params,
+  mode = "payments"
+}: {
+  params: { orderNumber: string };
+  mode?: "payments" | "orders";
+}) {
   noStore();
 
   await requireAdmin();
@@ -77,17 +87,22 @@ export default async function AdminPaymentDetailPage({
 
   const order = detail.order;
   const latestPayment = detail.payments[0];
+  const isOrderMode = mode === "orders";
 
   return (
     <AdminShell
-      currentPath="/admin/payments"
+      currentPath={isOrderMode ? "/admin/orders" : "/admin/payments"}
       eyebrow="PattayaBev Admin"
-      title={`ดูแลการชำระเงิน ${order.orderNumber}`}
-      description="ตรวจสอบข้อมูลการชำระเงินจากระบบหลังบ้าน อัปเดตสถานะคำสั่งซื้อ และเปิดดูข้อมูลจาก gateway ได้จากหน้านี้"
+      title={isOrderMode ? `Manage order ${order.orderNumber}` : `ดูแลการชำระเงิน ${order.orderNumber}`}
+      description={
+        isOrderMode
+          ? "Review customer, delivery, item, payment, and fulfillment details. Update order and payment statuses for the customer-facing order record."
+          : "ตรวจสอบข้อมูลการชำระเงินจากระบบหลังบ้าน อัปเดตสถานะคำสั่งซื้อ และเปิดดูข้อมูลจาก gateway ได้จากหน้านี้"
+      }
       actions={
         <>
-          <Link className={adminSecondaryActionClass} href="/admin/payments">
-            กลับหน้ารายการชำระเงิน
+          <Link className={adminSecondaryActionClass} href={isOrderMode ? "/admin/orders" : "/admin/payments"}>
+            {isOrderMode ? "Back to orders" : "กลับหน้ารายการชำระเงิน"}
           </Link>
           <Link className={adminSecondaryActionClass} href={`/order-confirmation/${order.orderNumber}`}>
             ดูหน้าคำสั่งซื้อ

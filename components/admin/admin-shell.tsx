@@ -18,6 +18,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/admin", label: "สินค้า", matchPrefixes: ["/admin/products"] },
+  { href: "/admin/orders", label: "Orders", matchPrefixes: ["/admin/orders"] },
   { href: "/admin/articles", label: "บทความ", matchPrefixes: ["/admin/articles"] },
   { href: "/admin/promotions", label: "โปรโมชั่น", matchPrefixes: ["/admin/promotions"] },
   { href: "/admin/b2b", label: "ลูกค้า B2B", matchPrefixes: ["/admin/b2b"] },
@@ -40,7 +41,7 @@ export function AdminShell({
   eyebrow,
   title,
   description,
-  actions: _actions,
+  actions,
   children
 }: AdminShellProps) {
   return (
@@ -57,6 +58,7 @@ export function AdminShell({
             </div>
 
             <div className="flex flex-wrap gap-3 xl:justify-end">
+              {actions}
               <Link className={adminSecondaryActionClass} href="/">
                 กลับหน้าหลัก
               </Link>

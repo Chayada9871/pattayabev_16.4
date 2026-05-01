@@ -8,7 +8,6 @@ import { SiteHeader } from "@/components/site/header";
 import { getServerSession } from "@/lib/auth";
 import {
   buildInvoicePath,
-  buildOrderConfirmationPath,
   buildPaymentProcessPath
 } from "@/lib/order-links";
 import { getAccessibleOrderByOrderNumber } from "@/lib/order-access";
@@ -106,18 +105,18 @@ export default async function OrderConfirmationPage({
                     <div className={`border px-5 py-5 ${getToneClassName(status.tone)}`}>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div>
-                          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8b6a2b]">เธซเธกเธฒเธขเน€เธฅเธเธเธณเธชเธฑเนเธเธเธทเนเธญ</p>
+                          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8b6a2b]">Order number</p>
                           <p className="mt-2 text-lg font-extrabold text-[#171212]">{order.orderNumber}</p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8b6a2b]">เธชเธ–เธฒเธเธฐเธเธฒเธฃเธเธณเธฃเธฐเน€เธเธดเธ</p>
+                          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8b6a2b]">Payment status</p>
                           <p className="mt-2 text-lg font-extrabold text-[#171212]">{getPaymentStatusLabel(order.paymentStatus)}</p>
                         </div>
                       </div>
 
                       {order.paymentReference ? (
                         <p className="mt-4 text-sm text-[#5f5852]">
-                          เธญเนเธฒเธเธญเธดเธเธเธฒเธฃเธเธณเธฃเธฐเน€เธเธดเธ: <span className="break-all font-semibold text-[#171212]">{order.paymentReference}</span>
+                          Payment reference: <span className="break-all font-semibold text-[#171212]">{order.paymentReference}</span>
                         </p>
                       ) : null}
                     </div>
@@ -128,7 +127,7 @@ export default async function OrderConfirmationPage({
                           href={buildPaymentProcessPath(order.orderNumber, accessToken)}
                           className="inline-flex h-11 items-center justify-center bg-[#171212] px-6 text-sm font-bold text-white transition hover:bg-[#2b2424]"
                         >
-                          เนเธเธเธณเธฃเธฐเน€เธเธดเธเธเธฃเธดเธ
+                          Pay now
                         </Link>
                       ) : null}
 
@@ -137,7 +136,7 @@ export default async function OrderConfirmationPage({
                           href={buildInvoicePath(order.orderNumber, accessToken)}
                           className="inline-flex h-11 items-center justify-center border border-[#171212] bg-[#171212] px-6 text-sm font-bold text-white transition hover:bg-[#2b2424]"
                         >
-                          เน€เธเธดเธ”เนเธเน€เธชเธฃเนเธ
+                          Open receipt
                         </Link>
                       ) : null}
 
@@ -145,7 +144,7 @@ export default async function OrderConfirmationPage({
                         href="/products"
                         className="inline-flex h-11 items-center justify-center border border-[#d7d1c7] bg-white px-6 text-sm font-bold text-[#171212] transition hover:bg-[#faf7f1]"
                       >
-                        เธเธฅเธฑเธเนเธเน€เธฅเธทเธญเธเธชเธดเธเธเนเธฒ
+                        Continue shopping
                       </Link>
                     </div>
                   </>
@@ -155,7 +154,7 @@ export default async function OrderConfirmationPage({
                       href="/products"
                       className="inline-flex h-11 items-center justify-center bg-[#171212] px-6 text-sm font-bold text-white transition hover:bg-[#2b2424]"
                     >
-                      เธเธฅเธฑเธเนเธเน€เธฅเธทเธญเธเธชเธดเธเธเนเธฒ
+                      Continue shopping
                     </Link>
                   </div>
                 )}
@@ -180,10 +179,10 @@ export default async function OrderConfirmationPage({
                 footer={
                   <div className="border border-[#dcd6cb] bg-white px-4 py-4 text-sm leading-7 text-[#5f5852]">
                     <p>
-                      เธเธทเนเธญเธเธนเนเธฃเธฑเธ: <span className="font-semibold text-[#171212]">{order.shippingAddress.fullName}</span>
+                      Recipient: <span className="font-semibold text-[#171212]">{order.shippingAddress.fullName}</span>
                     </p>
                     <p className="mt-2">
-                      เธ—เธตเนเธญเธขเธนเนเธเธฑเธ”เธชเนเธ:{" "}
+                      Shipping address:{" "}
                       <span className="font-semibold text-[#171212]">
                         {[
                           order.shippingAddress.addressLine1,

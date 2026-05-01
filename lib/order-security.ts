@@ -46,23 +46,52 @@ function hasMatchingAccessToken(storedHash: string | null, providedToken: string
   return timingSafeEqual(expected, actual);
 }
 
+function isMissingGuestAccessTokenColumn(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "42703"
+  );
+}
+
 export async function getOrderAccessRecord(orderNumber: string): Promise<OrderAccessRecord | null> {
   if (!isValidOrderNumber(orderNumber)) {
     return null;
   }
 
-  const result = await db.query(
-    `
-      select
-        order_number,
-        user_id,
-        guest_access_token_hash
-      from public.orders
-      where order_number = $1
-      limit 1
-    `,
-    [orderNumber]
-  );
+  let result;
+
+  try {
+    result = await db.query(
+      `
+        select
+          order_number,
+          user_id,
+          guest_access_token_hash
+        from public.orders
+        where order_number = $1
+        limit 1
+      `,
+      [orderNumber]
+    );
+  } catch (error) {
+    if (!isMissingGuestAccessTokenColumn(error)) {
+      throw error;
+    }
+
+    result = await db.query(
+      `
+        select
+          order_number,
+          user_id
+        from public.orders
+        where order_number = $1
+        limit 1
+      `,
+      [orderNumber]
+    );
+  }
 
   if (!result.rowCount) {
     return null;

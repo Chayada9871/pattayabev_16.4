@@ -55,6 +55,7 @@ export type AdminPaymentFilters = {
   query?: string;
   paymentStatus?: string;
   paymentMethod?: string;
+  orderStatus?: string;
 };
 
 function isMissingCheckoutSchema(error: unknown) {
@@ -138,6 +139,7 @@ export async function getAdminPayments(filters: AdminPaymentFilters = {}, limit 
   const query = sanitizeText(filters.query);
   const paymentStatus = sanitizeText(filters.paymentStatus);
   const paymentMethod = sanitizeText(filters.paymentMethod);
+  const orderStatus = sanitizeText(filters.orderStatus);
 
   try {
     const result = await db.query(
@@ -176,10 +178,11 @@ export async function getAdminPayments(filters: AdminPaymentFilters = {}, limit 
         )
           and ($2 = '' or o.payment_status = $2)
           and ($3 = '' or o.payment_method = $3)
+          and ($4 = '' or o.order_status = $4)
         order by o.created_at desc
-        limit $4
+        limit $5
       `,
-      [query, paymentStatus, paymentMethod, limit]
+      [query, paymentStatus, paymentMethod, orderStatus, limit]
     );
 
     return result.rows.map(mapAdminPaymentListItem);

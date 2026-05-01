@@ -1,31 +1,31 @@
 export type OrderDisplayTone = "success" | "warning" | "error";
 
 export function getPaymentMethodLabel(method: string) {
-  if (method === "promptpay") return "พร้อมเพย์ QR";
-  if (method === "card") return "บัตรเครดิต / เดบิต";
-  if (method === "cod") return "เก็บเงินปลายทาง";
+  if (method === "promptpay") return "PromptPay QR";
+  if (method === "card") return "Credit / debit card";
+  if (method === "cod") return "Cash on delivery";
   return method || "-";
 }
 
 export function getPaymentStatusLabel(status: string) {
-  if (status === "paid") return "ชำระเงินสำเร็จ";
-  if (status === "pending") return "รอยืนยันการชำระเงิน";
-  if (status === "failed") return "ชำระเงินไม่สำเร็จ";
-  if (status === "expired") return "ลิงก์ชำระเงินหมดอายุ";
-  if (status === "refunded") return "คืนเงินแล้ว";
-  return "รอชำระเงิน";
+  if (status === "paid") return "Payment completed";
+  if (status === "pending") return "Waiting for payment confirmation";
+  if (status === "failed") return "Payment failed";
+  if (status === "expired") return "Payment link expired";
+  if (status === "refunded") return "Refunded";
+  return "Waiting for payment";
 }
 
 export function getOrderStatusLabel(orderStatus: string, paymentStatus: string) {
-  if (paymentStatus === "paid") return "ชำระเงินแล้ว";
-  if (paymentStatus === "pending") return "รอยืนยันการชำระเงิน";
-  if (paymentStatus === "failed") return "ชำระเงินไม่สำเร็จ";
-  if (paymentStatus === "expired") return "ลิงก์ชำระเงินหมดอายุ";
-  if (orderStatus === "processing") return "กำลังเตรียมสินค้า";
-  if (orderStatus === "shipped") return "กำลังจัดส่ง";
-  if (orderStatus === "completed") return "จัดส่งสำเร็จ";
-  if (orderStatus === "cancelled") return "ยกเลิกแล้ว";
-  return "รอชำระเงิน";
+  if (paymentStatus === "paid") return "Paid";
+  if (paymentStatus === "pending") return "Waiting for payment confirmation";
+  if (paymentStatus === "failed") return "Payment failed";
+  if (paymentStatus === "expired") return "Payment link expired";
+  if (orderStatus === "processing") return "Preparing order";
+  if (orderStatus === "shipped") return "Shipped";
+  if (orderStatus === "completed") return "Completed";
+  if (orderStatus === "cancelled") return "Cancelled";
+  return "Waiting for payment";
 }
 
 export function canRetryPayment(paymentMethod: string, paymentStatus: string) {
@@ -55,47 +55,47 @@ export function getOrderStatusHeadline({
 } {
   if (paymentStatus === "paid") {
     return {
-      title: "ชำระเงินสำเร็จ",
-      description: "ระบบยืนยันการชำระเงินแล้ว ทีมงานจะเริ่มเตรียมสินค้าและจัดส่งตามรอบที่เลือกไว้",
+      title: "Payment completed",
+      description: "Your payment has been confirmed. Our team will prepare and ship your order.",
       tone: "success"
     };
   }
 
   if (paymentStatus === "pending") {
     return {
-      title: "รอยืนยันการชำระเงิน",
-      description: "ระบบได้รับข้อมูลการชำระแล้ว และกำลังรอผลยืนยันจากผู้ให้บริการชำระเงิน",
+      title: "Waiting for payment confirmation",
+      description: "We have received the payment information and are waiting for confirmation from the payment provider.",
       tone: "warning"
     };
   }
 
   if (paymentMethod === "cod" && orderStatus === "processing") {
     return {
-      title: "ยืนยันคำสั่งซื้อแล้ว",
-      description: "คำสั่งซื้อนี้จะชำระเงินกับพนักงานเมื่อรับสินค้า กรุณาเตรียมยอดชำระให้พร้อม",
+      title: "Order confirmed",
+      description: "This order will be paid to the delivery staff when you receive the items.",
       tone: "success"
     };
   }
 
   if (paymentStatus === "failed") {
     return {
-      title: "ชำระเงินไม่สำเร็จ",
-      description: "ยังไม่สามารถยืนยันการชำระเงินได้ คุณสามารถกลับไปเริ่มชำระเงินใหม่อีกครั้ง",
+      title: "Payment failed",
+      description: "We could not confirm this payment. You can start the payment again.",
       tone: "error"
     };
   }
 
   if (paymentStatus === "expired") {
     return {
-      title: "ลิงก์ชำระเงินหมดอายุ",
-      description: "รายการชำระเงินเดิมหมดอายุแล้ว กรุณาสร้างลิงก์ชำระเงินใหม่เพื่อดำเนินการต่อ",
+      title: "Payment link expired",
+      description: "The previous payment link has expired. Please create a new payment session to continue.",
       tone: "warning"
     };
   }
 
   return {
-    title: "รอชำระเงิน",
-    description: "คำสั่งซื้อถูกสร้างเรียบร้อยแล้ว กรุณาชำระเงินเพื่อให้ระบบเริ่มดำเนินการจัดเตรียมสินค้า",
+    title: "Waiting for payment",
+    description: "Your order has been created. Please complete payment so we can start preparing the items.",
     tone: "warning"
   };
 }

@@ -75,6 +75,8 @@ export async function updateAdminPaymentAction(
 
     revalidatePath("/admin/payments");
     revalidatePath(`/admin/payments/${orderNumber}`);
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderNumber}`);
     revalidatePath(`/order-confirmation/${orderNumber}`);
     revalidatePath(`/order-confirmation/${orderNumber}/invoice`);
     revalidatePath("/account/orders");
